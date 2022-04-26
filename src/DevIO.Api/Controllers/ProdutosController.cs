@@ -37,7 +37,7 @@ namespace DevIO.Api.Controllers
         }
 
         [HttpGet("id:guid")]
-        public async Task<ActionResult<ProdutoViewModel>> ObterPorId(Guid id)
+        public async Task<ActionResult<ProdutoImagemViewModel>> ObterPorId(Guid id)
         {
             var produto = await ObterProduto(id);
 
@@ -90,19 +90,38 @@ namespace DevIO.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        public async Task<ActionResult<ProdutoViewModel>> Atualizar(Guid id, ProdutoViewModel produtoViewModel)
+        public async Task<ActionResult<ProdutoImagemViewModel>> Atualizar(Guid id, ProdutoImagemViewModel produtoImagemViewModel)
         {
-            if (id != produtoViewModel.Id)
+            if (id != produtoImagemViewModel.Id)
             {
                 NotificarErro("O id informado não é o mesmo que foi passado na query");
-                return CustomResponse(produtoViewModel);
+                return CustomResponse(produtoImagemViewModel);
             }
+
+            var produtoAtualizacao = await ObterProduto(id);
+            produtoImagemViewModel.Imagem = produtoAtualizacao.Imagem;
 
             if (!ModelState.IsValid) return CustomResponse(ModelState);
 
-            await _produtoService.Atualizar(_mapper.Map<Produto>(produtoViewModel));
+            if(produtoImagemViewModel.ImagemUpload != null)
+            {
+                var imagemNome = Guid.NewGuid() + "_" + produtoImagemViewModel.Imagem;
+                if(!(await UploadArquivoAlternativo(produtoImagemViewModel.ImagemUpload, imagemNome)))
+                {
+                    return CustomResponse(ModelState);
+                }
 
-            return CustomResponse(produtoViewModel);
+                produtoAtualizacao.Imagem = imagemNome;
+            }
+
+            produtoAtualizacao.Nome = produtoImagemViewModel.Nome;
+            produtoAtualizacao.Descriacao = produtoImagemViewModel.Descriacao;
+            produtoAtualizacao.Valor = produtoImagemViewModel.Valor;
+            produtoAtualizacao.Ativo = produtoImagemViewModel.Ativo;
+
+            await _produtoService.Atualizar(_mapper.Map<Produto>(produtoAtualizacao));
+
+            return CustomResponse(produtoAtualizacao);
         }
 
         [HttpDelete]
@@ -117,9 +136,9 @@ namespace DevIO.Api.Controllers
             return CustomResponse();
         }
 
-        public async Task<ProdutoViewModel> ObterProduto(Guid id)
+        public async Task<ProdutoImagemViewModel> ObterProduto(Guid id)
         {
-            return _mapper.Map<ProdutoViewModel>(await _produtoRepository.ObterPorId(id));
+            return _mapper.Map<ProdutoImagemViewModel>(await _produtoRepository.ObterPorId(id));
         }
 
         private bool UploadArquivo(string arquivo, string imgNome)
