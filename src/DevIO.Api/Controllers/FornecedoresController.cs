@@ -87,8 +87,7 @@ namespace DevIO.Api.Controllers
 
         public async Task<FornecedorViewModel> ObterFornecedorProdutosEndereco(Guid id)
         {
-            var fornecedor = _mapper.Map<FornecedorViewModel>(await _fornecedorRepository.ObterFornecedorProdutosEndereco(id));
-            return fornecedor;
+            return _mapper.Map<FornecedorViewModel>(await _fornecedorRepository.ObterFornecedorProdutosEndereco(id));
         }
 
         [HttpGet("obter-endereco/{id:guid}")]
